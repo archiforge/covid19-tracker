@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/layout :: assets}"/>
+    <title>COVID-19 Tracker</title>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<main id="main" class="container">
+
+    <!--/* ---------- No data yet ---------- */-->
+    <section class="empty-state card" th:if="${snapshot == null}">
+        <svg class="empty-state__icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M21 12a9 9 0 1 1-6.2-8.6"/>
+            <path d="M21 4v5h-5"/>
+        </svg>
+        <h1>Data is on its way</h1>
+        <p>
+            The tracker hasn't loaded any COVID-19 data yet. If the app has just started, the download
+            is probably still in progress. Otherwise the data source may be unreachable; the app retries
+            automatically.
+        </p>
+        <a class="button" th:href="@{/}">Reload</a>
+    </section>
+
+    <th:block th:if="${snapshot != null}">
+
+        <!--/* ---------- Intro ---------- */-->
+        <section class="intro">
+            <h1>Global confirmed cases</h1>
+            <p class="intro__lede">
+                Cumulative confirmed COVID-19 cases by country, as of
+                <time th:datetime="${snapshot.reportDate}"
+                      th:text="${@formats.longDate(snapshot.reportDate)}">9 March 2023</time>.
+            </p>
+        </section>
+
+        <div class="notice" role="note" th:if="${stale}">
+            <svg class="notice__icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>
+                <path d="M12 9v4M12 17h.01"/>
+            </svg>
+            <p>
+                <strong>Historical data.</strong>
+                The latest report in the source data is from
+                <span th:text="${@formats.longDate(snapshot.reportDate)}">9 March 2023</span>.
+                The Johns Hopkins CSSE data set stopped updating on 10 March 2023, so these are its
+                final published figures.
+            </p>
+        </div>
+
+        <!--/* ---------- Key figures ---------- */-->
+        <section class="stats" aria-label="Key figures">
+            <article class="stat stat--hero">
+                <h2 class="stat__label">Total confirmed cases</h2>
+                <p class="stat__value" th:text="${@formats.integer(snapshot.totalCases)}">676,570,149</p>
+                <p class="stat__meta">Worldwide, all reporting countries</p>
+            </article>
+            <article class="stat">
+                <h2 class="stat__label">New cases</h2>
+                <p class="stat__value" th:text="${@formats.signed(snapshot.newCases)}">+177,325</p>
+                <p class="stat__meta">Since the previous daily report</p>
+            </article>
+            <article class="stat">
+                <h2 class="stat__label">Countries and regions</h2>
+                <p class="stat__value" th:text="${@formats.integer(snapshot.countries.size())}">201</p>
+                <p class="stat__meta"
+                   th:text="${@formats.integer(snapshot.locations.size()) + ' reporting locations'}">289 reporting
+                    locations</p>
+            </article>
+            <article class="stat">
+                <h2 class="stat__label">Report date</h2>
+                <p class="stat__value" th:text="${@formats.shortDate(snapshot.reportDate)}">9 Mar 2023</p>
+                <p class="stat__meta" th:text="${'Fetched ' + @formats.dateTime(snapshot.fetchedAt)}">Fetched 3 Oct
+                    2026, 05:20 UTC</p>
+            </article>
+        </section>
+
+        <!--/* ---------- Charts ---------- */-->
+        <div class="chart-grid">
+            <section class="card chart" aria-labelledby="top-countries-title">
+                <header class="card__header">
+                    <h2 id="top-countries-title" class="card__title">Most confirmed cases</h2>
+                    <p class="card__subtitle">Top 10 countries by cumulative confirmed cases</p>
+                </header>
+                <ol class="bar-chart">
+                    <!--/* th:attr runs in Thymeleaf's restricted mode, which forbids bean calls: compute first. */-->
+                    <li class="bar-chart__row" tabindex="0" th:each="country : ${topCountries}"
+                        th:with="primary=${@formats.integer(country.totalCases) + ' cases'},
+                                 secondary=${@formats.percent(snapshot.shareOfTotal(country.totalCases)) + ' of global cases'}"
+                        th:attr="data-label=${country.country}, data-primary=${primary}, data-secondary=${secondary},
+                                 aria-label=${country.country + ': ' + primary}">
+                        <span class="bar-chart__label" th:text="${country.country}">US</span>
+                        <span class="bar-chart__plot">
+                            <span class="bar-chart__bar"
+                                  th:style="${'--value:' + @formats.ratio(country.totalCases, topCountries[0].totalCases)}"></span>
+                            <span class="bar-chart__value" th:text="${@formats.compact(country.totalCases)}">103.8M</span>
+                        </span>
+                    </li>
+                </ol>
+            </section>
+
+            <section class="card chart chart--secondary" aria-labelledby="fastest-growing-title">
+                <header class="card__header">
+                    <h2 id="fastest-growing-title" class="card__title">Largest daily increases</h2>
+                    <p class="card__subtitle">Top 10 countries by new cases since the previous report</p>
+                </header>
+                <ol class="bar-chart" th:unless="${fastestGrowing.isEmpty()}">
+                    <li class="bar-chart__row" tabindex="0" th:each="country : ${fastestGrowing}"
+                        th:with="primary=${@formats.signed(country.newCases) + ' new cases'},
+                                 secondary=${@formats.integer(country.totalCases) + ' total cases'}"
+                        th:attr="data-label=${country.country}, data-primary=${primary}, data-secondary=${secondary},
+                                 aria-label=${country.country + ': ' + primary}">
+                        <span class="bar-chart__label" th:text="${country.country}">US</span>
+                        <span class="bar-chart__plot">
+                            <span class="bar-chart__bar"
+                                  th:style="${'--value:' + @formats.ratio(country.newCases, fastestGrowing[0].newCases)}"></span>
+                            <span class="bar-chart__value" th:text="${@formats.compact(country.newCases)}">46.9K</span>
+                        </span>
+                    </li>
+                </ol>
+                <p class="chart__empty" th:if="${fastestGrowing.isEmpty()}">No new cases in the latest report.</p>
+            </section>
+        </div>
+
+        <!--/* ---------- Country table ---------- */-->
+        <section class="card table-card" aria-labelledby="countries-title">
+            <header class="table-card__header">
+                <div>
+                    <h2 id="countries-title" class="card__title">All countries</h2>
+                    <p class="card__subtitle" id="country-count" aria-live="polite"
+                       th:text="${@formats.integer(snapshot.countries.size()) + ' countries and regions'}">201 countries and
+                        regions</p>
+                </div>
+                <label class="search">
+                    <span class="visually-hidden">Search countries and regions</span>
+                    <svg class="search__icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="11" cy="11" r="7"/>
+                        <path d="m20 20-3.5-3.5"/>
+                    </svg>
+                    <input id="country-search" type="search" placeholder="Search countries and regions"
+                           autocomplete="off" spellcheck="false">
+                </label>
+            </header>
+
+            <div class="table-scroll">
+                <table class="data-table" id="country-table"
+                       th:attr="data-total-countries=${snapshot.countries.size()}">
+                    <thead>
+                    <tr>
+                        <th scope="col" class="col-rank" aria-sort="none">
+                            <button type="button" data-sort="rank" data-default-order="asc">#</button>
+                        </th>
+                        <th scope="col" aria-sort="none">
+                            <button type="button" data-sort="name" data-default-order="asc">Country / region</button>
+                        </th>
+                        <th scope="col" class="num" aria-sort="descending">
+                            <button type="button" data-sort="total" data-default-order="desc">Total cases</button>
+                        </th>
+                        <th scope="col" class="num" aria-sort="none">
+                            <button type="button" data-sort="new" data-default-order="desc">New cases</button>
+                        </th>
+                        <th scope="col" class="num col-share">Share of global</th>
+                    </tr>
+                    </thead>
+
+                    <tbody class="country-group" th:each="country, iter : ${snapshot.countries}"
+                           th:attr="data-rank=${iter.count},
+                                    data-name=${country.country},
+                                    data-total=${country.totalCases},
+                                    data-new=${country.newCases},
+                                    data-search=${#strings.toLowerCase(country.country + ' ' + #strings.listJoin(country.regions.![region], ' '))}">
+                    <tr class="country-row">
+                        <td class="col-rank" th:text="${iter.count}">1</td>
+                        <th scope="row" class="country-cell">
+                            <span class="country-cell__inner">
+                            <button type="button" class="expander" th:if="${country.hasRegions()}"
+                                    aria-expanded="false"
+                                    th:attr="aria-label=${'Show regions of ' + country.country}">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+                            </button>
+                            <span class="country-name" th:text="${country.country}">US</span>
+                            <span class="badge" th:if="${country.hasRegions()}"
+                                  th:text="${country.regions.size() + ' regions'}">8 regions</span>
+                            </span>
+                        </th>
+                        <td class="num" th:text="${@formats.integer(country.totalCases)}">103,802,702</td>
+                        <td class="num" th:classappend="${country.newCases == 0 ? 'is-zero' : (country.newCases < 0 ? 'is-negative' : '')}"
+                            th:title="${country.newCases < 0} ? 'Revised down by the data source'"
+                            th:text="${@formats.signed(country.newCases)}">+46,931</td>
+                        <td class="num col-share"
+                            th:text="${@formats.percent(snapshot.shareOfTotal(country.totalCases))}">15.3%</td>
+                    </tr>
+                    <tr class="region-row" th:each="region : ${country.regions}">
+                        <td class="col-rank"></td>
+                        <th scope="row" class="region-cell" th:text="${region.hasRegion() ? region.region : 'Mainland'}">
+                            New South Wales
+                        </th>
+                        <td class="num" th:text="${@formats.integer(region.totalCases)}">3,000,000</td>
+                        <td class="num" th:classappend="${region.newCases == 0 ? 'is-zero' : (region.newCases < 0 ? 'is-negative' : '')}"
+                            th:text="${@formats.signed(region.newCases)}">+12</td>
+                        <td class="num col-share"
+                            th:text="${@formats.percent(snapshot.shareOfTotal(region.totalCases))}">0.4%</td>
+                    </tr>
+                    </tbody>
+
+                    <tbody class="no-results" hidden>
+                    <tr>
+                        <td colspan="5">No countries or regions match your search.</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </th:block>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<div class="chart-tooltip" role="tooltip" hidden></div>
+</body>
+</html>

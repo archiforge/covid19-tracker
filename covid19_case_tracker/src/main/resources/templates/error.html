@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/layout :: assets}"/>
+    <title th:text="${(status ?: 'Error') + ' · COVID-19 Tracker'}">Error · COVID-19 Tracker</title>
+</head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<main id="main" class="container">
+    <section class="empty-state card">
+        <p class="empty-state__code" th:text="${status}">404</p>
+        <h1 th:text="${status == 404 ? 'Page not found' : (error ?: 'Something went wrong')}">Page not found</h1>
+        <p th:if="${status == 404}">The page you were looking for doesn't exist or has moved.</p>
+        <p th:unless="${status == 404}">An unexpected error occurred. Please try again in a moment.</p>
+        <a class="button" th:href="@{/}">Back to the dashboard</a>
+    </section>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

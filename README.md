@@ -39,6 +39,30 @@ A Spring Boot dashboard for global confirmed COVID-19 cases, built on the
 > in the data set is from 9 March 2023. The dashboard says so in a banner. You can point the app at
 > any other CSV in the same format; see [Configuration](#configuration).
 
+## Screenshot gallery
+
+All screenshots are taken from the running app with live data. Full-resolution images are in
+[`docs/screenshots`](docs/screenshots).
+
+| | |
+|---|---|
+| ![Charts with tooltip](docs/screenshots/charts-tooltip.png)<br>**Interactive charts:** hover or focus a bar for exact figures | ![Charts in dark mode](docs/screenshots/charts-tooltip-dark.png)<br>**Dark theme:** separate colour steps tuned for dark backgrounds |
+| ![Search matching a territory](docs/screenshots/country-table.png)<br>**Instant search** matches regions as well as countries | ![Expanded regions in dark mode](docs/screenshots/country-table-regions-dark.png)<br>**Drill-down** into states, provinces and territories |
+| ![Table sorted by new cases](docs/screenshots/country-table-sorted-by-new-cases.png)<br>**Sortable columns** with accessible sort indicators | ![No search results](docs/screenshots/country-table-no-results.png)<br>**Empty search state** |
+| ![Loading state](docs/screenshots/empty-state.png)<br>**Graceful loading state** while data downloads or the source is unreachable | ![404 page](docs/screenshots/error-404.png)<br>**Custom error page** instead of the default error page |
+| ![API summary](docs/screenshots/api-summary.png)<br>**JSON API:** headline figures | ![API country detail](docs/screenshots/api-country.png)<br>**JSON API:** a country with its regions |
+
+<table>
+  <tr>
+    <td width="25%"><img src="docs/screenshots/mobile.png" alt="Mobile, light"><br><b>Mobile</b></td>
+    <td width="25%"><img src="docs/screenshots/mobile-dark.png" alt="Mobile, dark"><br><b>Mobile, dark</b></td>
+    <td width="25%"><img src="docs/screenshots/mobile-charts.png" alt="Mobile charts"><br><b>Mobile charts</b></td>
+    <td width="25%"><img src="docs/screenshots/mobile-table.png" alt="Mobile table"><br><b>Mobile table</b></td>
+  </tr>
+</table>
+
+![Tablet layout](docs/screenshots/tablet.png)
+
 ## Quick start
 
 You need **JDK 21 or later**. The Maven wrapper downloads Maven for you.

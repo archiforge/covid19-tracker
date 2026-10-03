@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # ---- Build -------------------------------------------------------------------
-FROM eclipse-temurin:21-jdk AS build
+FROM eclipse-temurin:24-jdk AS build
 WORKDIR /workspace
 
 # Resolve dependencies in their own layer so source changes don't re-download them.
@@ -14,7 +14,7 @@ RUN --mount=type=cache,target=/root/.m2 ./mvnw -B -ntp package -DskipTests \
     && java -Djarmode=tools -jar target/covid19-tracker.jar extract --layers --destination target/extracted
 
 # ---- Runtime -----------------------------------------------------------------
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:24-jre
 WORKDIR /app
 
 RUN useradd --system --no-create-home --shell /usr/sbin/nologin tracker
